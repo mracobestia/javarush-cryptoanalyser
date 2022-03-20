@@ -14,6 +14,9 @@ public class Cryptanalyser {
             'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Э', 'Ю', 'Я', '\n', '\r'};
 
     private static final ArrayList<String> FREQUENCE_DICTIONARY = new ArrayList<>();
+    private static final String BRUTE_FORCE_RESULTS_CATALOG_NAME = "BruteForceFiles";
+    private static final String BRUTE_FORCE_RESULT_FILE_NAME = "ResultFile";
+    private static final String BRUTE_FORCE_RESULT_FILE_EXTENSION = ".txt";
 
     private Cryptanalyser() {}
 
@@ -142,7 +145,7 @@ public class Cryptanalyser {
         FREQUENCE_DICTIONARY.add("ведь");
     }
 
-    public static void encrypt(String inputFilePath, String outputFilePath, int key) {
+    public static void encrypt(String inputFilePath, String outputFilePath, int key) throws IOException {
 
         Path inputPath = Paths.get(inputFilePath);
         Path outputPath = Paths.get(outputFilePath);
@@ -151,7 +154,7 @@ public class Cryptanalyser {
             key = key % ALPHABET.length;
         }
 
-        if (!clearOutputFileBefore(outputFilePath)) {
+        if (!clearFile(outputFilePath)) {
             return;
         }
 
@@ -178,12 +181,12 @@ public class Cryptanalyser {
 
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            throw e;
         }
     }
 
-    public static void decrypt(String inputFilePath, String outputFilePath, int key) throws IllegalCharacter {
+    public static void decrypt(String inputFilePath, String outputFilePath, int key) throws IOException {
 
         Path inputPath = Paths.get(inputFilePath);
         Path outputPath = Paths.get(outputFilePath);
@@ -192,9 +195,9 @@ public class Cryptanalyser {
             key = key % ALPHABET.length;
         }
 
-        boolean isSymbolWrite = false;
+        boolean isSymbolInAlphabet = false;
 
-        if (!clearOutputFileBefore(outputFilePath)) {
+        if (!clearFile(outputFilePath)) {
             return;
         }
 
@@ -204,56 +207,63 @@ public class Cryptanalyser {
             while(buffReader.ready()) {
 
                 char symbol = (char) buffReader.read();
-                isSymbolWrite = false;
+                isSymbolInAlphabet = false;
 
                 for (int i = 0; i < ALPHABET.length; i++) {
                     if (ALPHABET[i] == symbol) {
                         int newIndex = (i - key) >= 0 ? (i - key) : (ALPHABET.length + i - key);
                         buffWriter.write(String.valueOf(ALPHABET[newIndex]));
-                        isSymbolWrite = true;
+                        isSymbolInAlphabet = true;
                         break;
                     }
                 }
 
-                if (!isSymbolWrite) {
+                if (!isSymbolInAlphabet) {
                     break;
                 }
 
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            throw e;
         }
 
-        if (!isSymbolWrite) {
-            throw new IllegalCharacter();
+        if (!isSymbolInAlphabet) {
+            throw new IllegalCharacterException("An unknown character was passed. The program is being hacked!");
         }
 
     }
 
-    public static void hackBruteForce(String inputFilePath) throws IllegalCharacter, IOException {
+    public static void hackBruteForce(String inputFilePath) throws IOException {
 
         ArrayList<String> filesArray = new ArrayList<>();
 
         String separator = FileSystems.getDefault().getSeparator();
 
-        String newCatalog = Path.of(inputFilePath).getParent().toString() + separator + "BruteForceFiles";
+        String newCatalog = Path.of(inputFilePath).getParent().toString() + separator + BRUTE_FORCE_RESULTS_CATALOG_NAME;
         Path newCatalogPath = Path.of(newCatalog);
         if (!Files.exists(newCatalogPath)) {
             Files.createDirectory(Path.of(newCatalog));
         }
 
         for (int i = 1; i < ALPHABET.length; i++) {
-            String outputFilePath = newCatalog + separator + "ResultFile" + i + ".txt";
+            String outputFilePath = newCatalog + separator + BRUTE_FORCE_RESULT_FILE_NAME + i + BRUTE_FORCE_RESULT_FILE_EXTENSION;
             filesArray.add(outputFilePath);
 
             decrypt(inputFilePath, outputFilePath, i);
         }
 
+        System.out.println("The best result is in the file: " + bestHackResultSearch(filesArray));
+        System.out.println("Other results is in the catalog: " + newCatalog);
+
+    }
+
+    private static String bestHackResultSearch(ArrayList<String> filesArray) {
+
         String maxWordsCountFile = "";
         int maxWordsCount = 0;
         for (String file : filesArray) {
-            Integer wordsCount = 0;
+            int wordsCount = 0;
 
             try (BufferedReader buffReader = Files.newBufferedReader(Path.of(file), StandardCharsets.UTF_8)) {
 
@@ -268,7 +278,7 @@ public class Cryptanalyser {
                     }
                 }
 
-            } catch (Exception e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 break;
             }
@@ -279,12 +289,11 @@ public class Cryptanalyser {
             }
         }
 
-        System.out.println("The best result is in the file: " + maxWordsCountFile);
-        System.out.println("Other results is in the catalog: " + newCatalog);
+        return maxWordsCountFile;
 
     }
 
-    private static boolean clearOutputFileBefore(String outputFilePath) {
+    private static boolean clearFile(String outputFilePath) {
         try (PrintWriter writer = new PrintWriter(outputFilePath)) {
             writer.print("");
             return true;

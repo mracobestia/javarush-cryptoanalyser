@@ -1,32 +1,36 @@
 package com.javarush.cryptoanalyser.programinterface;
 
 import com.javarush.cryptoanalyser.workalgorithm.*;
-import java.nio.file.*;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class ConsoleInterface {
 
-    public static final String EXIT_MODE = "exit";
-    public static final String GOOD_RESULT = "ok";
-    private static final String[] IGNORED_FILES = {".bash_history", ".bash_logout", ".bash_profile",
-        ".bashrc", ".gtkrc", ".login", ".logout", ".profile", ".viminfo", ".wm_style", ".Xdefaults", ".Xresources",
-        ".xinitrc'", ".xsession", "/etc", "/boot"};
+    private static final String EXIT_MODE = "exit";
+    private static final String GOOD_RESULT = "ok";
+    private static final String ERROR_MESSAGE = "There are some problems with your files.";
 
     private ConsoleInterface() {}
 
     public static String encrypt() {
 
-        HashMap<String, String> parameters = getParameters();
+        Map<String, String> parameters = getParameters();
 
         if (parameters.get("exit").equals(EXIT_MODE)) {
             return EXIT_MODE;
         }
 
-        Cryptanalyser.encrypt(
-                parameters.get("inputFile"),
-                parameters.get("outputFile"),
-                Integer.parseInt(parameters.get("strKey")));
+        try {
+            Cryptanalyser.encrypt(
+                    parameters.get("inputFile"),
+                    parameters.get("outputFile"),
+                    Integer.parseInt(parameters.get("strKey")));
+        } catch (IOException ex) {
+            System.err.println(ERROR_MESSAGE);
+            return EXIT_MODE;
+        }
 
         System.out.println("The selected file has been encrypted.");
         return GOOD_RESULT;
@@ -35,9 +39,9 @@ public class ConsoleInterface {
 
     public static String decrypt() {
 
-        HashMap<String, String> parameters = getParameters();
+        Map<String, String> parameters = getParameters();
 
-        if (parameters.get("exit").equals(EXIT_MODE)) {
+        if (EXIT_MODE.equals(parameters.get("exit"))) {
             return EXIT_MODE;
         }
 
@@ -46,8 +50,11 @@ public class ConsoleInterface {
                     parameters.get("inputFile"),
                     parameters.get("outputFile"),
                     Integer.parseInt(parameters.get("strKey")));
-        } catch (IllegalCharacter ex) {
-            ex.printStackTrace();
+        } catch (IOException ex) {
+            System.err.println(ERROR_MESSAGE);
+            return EXIT_MODE;
+        } catch (IllegalCharacterException ex) {
+            System.err.println(ex.getErrorMessage());
             return EXIT_MODE;
         }
 
@@ -58,7 +65,7 @@ public class ConsoleInterface {
 
     public static String hackBruteForce() {
 
-        HashMap<String, String> parameters = getParametersForHack();
+        Map<String, String> parameters = getParametersForHack();
 
         if (parameters.get("exit").equals(EXIT_MODE)) {
             return EXIT_MODE;
@@ -66,8 +73,11 @@ public class ConsoleInterface {
 
         try {
             Cryptanalyser.hackBruteForce(parameters.get("inputFile"));
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (IOException ex) {
+            System.err.println(ERROR_MESSAGE);
+            return EXIT_MODE;
+        } catch (IllegalCharacterException ex) {
+            System.err.println(ex.getErrorMessage());
             return EXIT_MODE;
         }
 
@@ -76,64 +86,9 @@ public class ConsoleInterface {
 
     }
 
-    private static boolean isFilePathValid(String filePath) {
+    private static Map<String, String> getParameters() {
 
-        if (filePath.length() == 0) {
-            return false;
-        }
-
-        boolean isValid = true;
-        Path path = Paths.get(filePath);
-
-        if (!Files.exists(path)) {
-            System.out.println("File doesn't exist. Please, select another file.");
-            isValid = false;
-        } else if (Files.isDirectory(path)) {
-            System.out.println("It is a directory. Please, select file.");
-            isValid = false;
-        } else {
-            for (String ignoredFile : IGNORED_FILES) {
-                if (filePath.contains(ignoredFile)) {
-                    isValid = false;
-                    break;
-                }
-            }
-            if (!isValid) {
-                System.out.println("File path contains contains invalid characters. Please, select another file.");
-            }
-        }
-
-        return isValid;
-
-    }
-
-    private static boolean isKeyValid(String strKey) {
-
-        if (strKey.length() == 0) {
-            return false;
-        }
-
-        int key = 0;
-
-        try {
-            key = Integer.parseInt(strKey);
-        } catch (NumberFormatException ex) {
-            System.out.println("The specified key is not a number. Please, specify number key.");
-            return false;
-        }
-
-        if (key < 0) {
-            System.out.println("The specified key is less than zero. Please, specify another key.");
-            return false;
-        }
-
-        return true;
-
-    }
-
-    private static HashMap<String, String> getParameters() {
-
-        HashMap<String, String> result = new HashMap<>();
+        Map<String, String> result = new HashMap<>();
         result.put("exit", "");
 
         Scanner scanner = new Scanner(System.in);
@@ -146,7 +101,7 @@ public class ConsoleInterface {
                 result.put("exit", EXIT_MODE);
                 break;
             }
-        } while (!isFilePathValid(inputFile));
+        } while (!ParameterValidation.isFilePathValid(inputFile));
 
         if (isExit(inputFile)) {
             return result;
@@ -164,7 +119,7 @@ public class ConsoleInterface {
             } else if (outputFile.equals(inputFile)) {
                 System.out.println("Output file can't be the same as input file. Please select another file.");
             }
-        } while (!isFilePathValid(outputFile) || outputFile.equals(inputFile));
+        } while (!ParameterValidation.isFilePathValid(outputFile) || outputFile.equals(inputFile));
 
         if (isExit(outputFile)) {
             return result;
@@ -180,7 +135,7 @@ public class ConsoleInterface {
                 result.put("exit", EXIT_MODE);
                 break;
             }
-        } while (!isKeyValid(strKey));
+        } while (!ParameterValidation.isKeyValid(strKey));
 
         if (isExit(strKey)) {
             return result;
@@ -192,9 +147,9 @@ public class ConsoleInterface {
 
     }
 
-    private static HashMap<String, String> getParametersForHack() {
+    private static Map<String, String> getParametersForHack() {
 
-        HashMap<String, String> result = new HashMap<>();
+        Map<String, String> result = new HashMap<>();
         result.put("exit", "");
 
         Scanner scanner = new Scanner(System.in);
@@ -207,7 +162,7 @@ public class ConsoleInterface {
                 result.put("exit", EXIT_MODE);
                 break;
             }
-        } while (!isFilePathValid(inputFile));
+        } while (!ParameterValidation.isFilePathValid(inputFile));
 
         if (isExit(inputFile)) {
             return result;
