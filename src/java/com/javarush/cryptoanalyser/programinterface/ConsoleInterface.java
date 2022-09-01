@@ -18,7 +18,7 @@ public class ConsoleInterface {
 
         Map<String, String> parameters = getParameters();
 
-        if (parameters.get("exit").equals(EXIT_MODE)) {
+        if (EXIT_MODE.equals(parameters.get("exit"))) {
             return EXIT_MODE;
         }
 
@@ -41,7 +41,7 @@ public class ConsoleInterface {
 
         Map<String, String> parameters = getParameters();
 
-        if (EXIT_MODE.equals(parameters.get("exit"))) {
+        if (parameters.containsKey("exit") && EXIT_MODE.equals(parameters.get("exit"))) {
             return EXIT_MODE;
         }
 
@@ -67,7 +67,7 @@ public class ConsoleInterface {
 
         Map<String, String> parameters = getParametersForHack();
 
-        if (parameters.get("exit").equals(EXIT_MODE)) {
+        if (parameters.containsKey("exit") && EXIT_MODE.equals(parameters.get("exit"))) {
             return EXIT_MODE;
         }
 

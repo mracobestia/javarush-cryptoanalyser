@@ -258,7 +258,7 @@ public class Cryptanalyser {
 
     }
 
-    private static String bestHackResultSearch(ArrayList<String> filesArray) {
+    private static String bestHackResultSearch(ArrayList<String> filesArray) throws IOException {
 
         String maxWordsCountFile = "";
         int maxWordsCount = 0;
@@ -279,8 +279,7 @@ public class Cryptanalyser {
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
-                break;
+                throw e;
             }
 
             if (wordsCount > maxWordsCount) {

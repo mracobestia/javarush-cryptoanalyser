@@ -6,7 +6,7 @@ import java.nio.file.Paths;
 
 public class ParameterValidation {
 
-    private static final String[] IGNORED_FILES = {".bash_history", ".bash_logout", ".bash_profile",
+    private static final String[] FORBIDDEN_FILES = {".bash_history", ".bash_logout", ".bash_profile",
             ".bashrc", ".gtkrc", ".login", ".logout", ".profile", ".viminfo", ".wm_style", ".Xdefaults", ".Xresources",
             ".xinitrc'", ".xsession", "/etc", "/boot"};
 
@@ -28,7 +28,7 @@ public class ParameterValidation {
             System.out.println("It is a directory. Please, select file.");
             isValid = false;
         } else {
-            for (String ignoredFile : IGNORED_FILES) {
+            for (String ignoredFile : FORBIDDEN_FILES) {
                 if (filePath.contains(ignoredFile)) {
                     isValid = false;
                     break;
